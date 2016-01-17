@@ -21,13 +21,18 @@ declare var jQuery:any;
 export class Progressions {
 
     private result: Object = { 'json':{}, 'text':'loading...'};
-    private http: Http;
-    private googleDocJsonFeedUrl: string ='https://spreadsheets.google.com/feeds/worksheets/1xP0aCx9S4wG_3XN9au5VezJ6xVTnZWNlOLX8l6B69n4/public/basic?alt=json';
+    private http: Http;        
+    private googleSheetGUI: string = '17zTu83ztPNE-7EYePx1YFHiqI5mD-nHsju8GPKnSlQM';
+    private googleDocJsonFeedUrl: string ='https://spreadsheets.google.com/feeds/worksheets/'+this.googleSheetGUI+'/public/basic?alt=json';
     private dynamodbio : Dynamodbio;
     private versioning: Versioning;
     
     private progressionWorksheetNames = [];
     private progressionWorksheets = [];
+    
+    private points = [];
+    private path;
+    private maxY = 0;
     
     private elementRef: ElementRef;
    
@@ -49,36 +54,6 @@ export class Progressions {
         this.elementRef = elementRef;
     }
 
-    ngOnInit() {
-        
-        var points = [
-            [0, 0],
-            [200, 100],
-            [300, 400],
-            [400, 460],
-            [500, 500]
-        ];
-        
-        var el:HTMLElement = this.elementRef.nativeElement;
-
-        var root:any = d3.select( jQuery(el).find('div')[0] );
-    
-        var svg = root.append("svg")
-            .attr("width", 500)
-            .attr("height", 500);
-            
-        var path = svg.append("path")
-            .data([points])
-            .attr("d", d3.svg.line()
-            .tension(0) // Catmull–Rom
-            .interpolate("basis"));
-            
-        svg.selectAll(".point")
-            .data(points)
-            .enter().append("circle")
-            .attr("r", 4)
-            .attr("transform", function(d) { return "translate(" + d + ")"; })
-    }
     
     findYatXbyBisection(x, path, error){
             var length_end = path.getTotalLength()
@@ -128,43 +103,41 @@ export class Progressions {
     }
     
     handleImportFromGoogleDocs( worksheetName) {  
-      console.log('importFromGoogleDocs' + worksheetName);
-        
+        console.log('importFromGoogleDocs:' + worksheetName);        
         var worksheetKey = '';
         this.progressionWorksheets.forEach( function( worksheet ) {
-          if ( worksheet['title']['$t'] === worksheetName) {
+            if ( worksheet['title']['$t'] === worksheetName) {
             worksheetKey = worksheet['key'];     
-          }
+            }
         });
         
-      this.progressionWorksheetNames = [worksheetName];
-        
-      var url = 'https://spreadsheets.google.com/feeds/list/1xP0aCx9S4wG_3XN9au5VezJ6xVTnZWNlOLX8l6B69n4/'+ worksheetKey + '/public/values?alt=json';
+        this.progressionWorksheetNames = [worksheetName];
 
-      console.log(url);
-      this.http
+        var url = 'https://spreadsheets.google.com/feeds/list/' + this.googleSheetGUI +'/'+ worksheetKey + '/public/values?alt=json';
+
+        console.log(url);
+        this.http
         .get(url)
         .map(res => res.json())
         .subscribe(
-          res => this.result = this.parseGoogleDocJSON(res, worksheetKey)
-         );
+            res => this.result = this.parseGoogleDocJSON(res, worksheetKey)
+            );
     }
     
     
    populateProgressionsWorksheetsList( googleWorksheetJSON) {
-
+        
       this.progressionWorksheetNames = [];
       this.progressionWorksheets = [];
    
       for (var rowIndex = 0; rowIndex < googleWorksheetJSON.feed.entry.length; rowIndex++) { 
 
-        //console.log( googleWorksheetJSON.feed.entry[rowIndex]['title']['$t']);
         var progression = {};
         if (googleWorksheetJSON.feed.entry[rowIndex]['title']['$t'].match(/^Prog(.*)/)) {
           progression['title'] = googleWorksheetJSON.feed.entry[rowIndex]['title'];
           progression['content'] = googleWorksheetJSON.feed.entry[rowIndex]['content'];
           
-          var re = new RegExp( "https://spreadsheets.google.com/feeds/list/1xP0aCx9S4wG_3XN9au5VezJ6xVTnZWNlOLX8l6B69n4/(.*)/public/basic");
+          var re = new RegExp( "https://spreadsheets.google.com/feeds/list/" + this.googleSheetGUI +"/(.*)/public/basic");
           var match =  re.exec(googleWorksheetJSON.feed.entry[rowIndex]['link'][0]['href']);
           if (match) {
               console.log('match');
@@ -175,26 +148,17 @@ export class Progressions {
           
           this.progressionWorksheets.push(progression);
         }
-  
-        
-        /*
-        var value = res.feed.entry[rowIndex]['gsx$value'].$t;
-        if (!isNaN(value)) {
-            value = parseInt( value, 10);
-        }
-        simvalues['data']['globals'][key] = value;*/
       }
       
-      //window.alert('Import complete. Now export to persist this change.');
        
-      return; // { 'json':this.dynamicWorksheets, 'text':JSON.stringify(this.dynamicWorksheets, null, 2)};
+      return; 
     }
     
 
     
     
     handleExportToDynamoDB( evironmentFlag = 'live') {
-      
+            
       var tables = (evironmentFlag === 'live') ? ['dataminerruleslive', 'dataminerrulestest01'] : ['dataminerrulestest01'];
  
         console.log(this.result['worksheetKey'] + ', ' + this.result['title']);
@@ -211,48 +175,116 @@ export class Progressions {
     
     parseGoogleDocJSON(res, worksheetKey) {
       
-      
+      this.points = [];
+              
       if ( !this.result.hasOwnProperty('comment')) {
           this.result['comment'] = 'no comment';
       }
       
       var simvalues = this.result['json'];
       simvalues['data'] = {};
-      simvalues['data']['rows'] = [];
-      simvalues['data']['keys'] = {};
 
       var rowIndex = 0;
       for (var row  in res.feed.entry) { 
+          
+         let tuplet = [];
          
-         var key = res.feed.entry[row]['title']['$t'];
-         simvalues['data']['keys'][key] = {};
+         var progression =  parseInt( res.feed.entry[row]['gsx$progression']['$t'], 10);
+         var controlpoint = parseInt( res.feed.entry[row]['gsx$controlpoint']['$t'], 10);
          
-         var thisRow = {};
-         thisRow[key] = {};
-               
-         for ( var col in res.feed.entry[0] ) {
-      
-            var value = res.feed.entry[row]['title']['$t'];
-            if (!isNaN(value)) {
-                value = parseInt( value, 10);
-            }
-            console.log(value);
-            
-            Object.keys(value).forEach( function( subvalue) {
-              if (col.match(/^gsx/)) {
-                
-                if (!isNaN(res.feed.entry[rowIndex][col]['$t'])) {
-                    thisRow[key][col.substring(4)] = parseInt( res.feed.entry[rowIndex][col]['$t'], 10);
-                } else {              
-                    thisRow[key][col.substring(4)] = res.feed.entry[rowIndex][col]['$t'];  
-                }
-              }
-            });         
-         }
-         
-         simvalues['data']['rows'].push( thisRow);
+         tuplet.push(progression * 10);
+         tuplet.push(controlpoint * 10);
+         this.points.push(tuplet);
+                  
          rowIndex ++;
       }
+      
+      // transform tuplets from top-left to bottom-left origin 
+      this.maxY = 0;
+      for (var tuple in this.points) {
+          if (this.points[tuple][1] > this.maxY) {
+              this.maxY = this.points[tuple][1];
+          }
+      }
+
+      for (var tuple in this.points) {
+          this.points[tuple][1] = this.maxY - this.points[tuple][1];
+      }
+      
+        var el:HTMLElement = this.elementRef.nativeElement;
+
+        // remove any pre-existing svg markup before appending updated html in to DOM.
+        jQuery(el).find('div')[0].innerHTML = ''; 
+
+        var root:any = d3.select( jQuery(el).find('div')[0] );
+   
+        var svg = root.append("svg")
+            .attr("width", this.points[this.points.length-1][0])
+            .attr("height", this.maxY);
+            
+        this.path = svg.append("path")
+            .data([this.points])
+            .attr("d", d3.svg.line()
+            .tension(0) // Catmull–Rom
+            .interpolate("basis"));
+            
+        svg.selectAll(".point")
+            .data(this.points)
+            .enter().append("circle")
+            .attr("r", 4)
+            .attr("transform", function(d) { return "translate(" + d + ")"; });
+
+            
+// axis labels            
+        /*
+        svg.append("text")
+            .attr("class", "x label")
+            .attr("text-anchor", "end")
+            .attr("x", 500)
+            .attr("y", 500 - 6)
+            .text("income per capita, inflation-adjusted (dollars)");     
+
+
+        svg.append("text")
+            .attr("class", "y label")
+            .attr("text-anchor", "end")
+            .attr("y", 6)
+            .attr("dy", ".75em")
+            .attr("transform", "rotate(-90)")
+            .text("life expectancy (years)");*/
+    
+//x axis annoations     
+/*   
+        var xScale = d3.scale.ordinal();
+
+        // x axis annoations - create an array with the position of each label
+        var range = [];
+        var xoffset = 0;
+        for (var k =0;k<this.points.length; k++){
+            range.push((k*500)/(this.points.length -1 ) + xoffset)
+        }
+
+        //x axis annoations - domain is the desired labels in an array, range is the position of each label in an array
+        var rangeDomain = [];
+        for (var k =0;k<this.points.length; k++){
+            rangeDomain.push(  this.points[k][0] / 10 );
+        }
+        xScale.domain(rangeDomain).range(range);                
+        var xaxis = d3.svg.axis().scale(xScale);
+        var g = svg.append("g")
+        .attr("transform", "translate(" + xoffset + "," + (0) + ")")
+        .call(xaxis);        
+                        */
+
+      // interpolate
+      simvalues['data']['progression'] = [];
+
+      for (var kx =this.points[0][0];kx<=this.points[this.points.length-1][0]; kx+=10){
+          let value = (this.maxY - this.findYatXbyBisection(kx,this.path.node(), null)) / 10;
+          value = Math.round(value);
+          simvalues['data']['progression'].push(value);
+      }            
+            
       
       window.alert('Import complete. Now export to persist this change.');
        
