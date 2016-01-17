@@ -1,0 +1,36 @@
+<h4><a href="">Dynamic Worksheets.</a></h4>
+
+
+
+
+
+
+<pre>
+version: {{result['json']['version']}}
+last edit date: {{result['json']['lastEditDate']}}
+</pre>
+
+<pre>
+<button (click)="handleImportDynamicWorksheets()"><span></span>Populate Dynamic WorkSheets List</button>
+
+<table class="table table-striped">
+    <tbody>
+        <tr *ngFor="#row of dynamicWorksheetNames">
+            <td>{{row}}</td>
+            <td><button (click)="handleImportFromGoogleDocs(row)"><span class="glyphicon glyphicon-import"></span>Google sheet</button>
+</td>
+            <td><button (click)="handleExportToDynamoDB()"><span class="glyphicon glyphicon-export"></span>Live env</button>
+</td>
+           <td><button (click)="handleExportToDynamoDB('test')"><span class="glyphicon glyphicon-export"></span>Test env</button>
+</td>
+        </tr>
+    </tbody>
+</table>
+</pre>
+
+<pre>
+Set Export Comment: <input  style="float: right; width:75%" [(ngModel)]=result.comment/>
+</pre>
+
+<textarea readonly cols="50" rows="20"  style="float: right; width:100%">{{result.text}}</textarea>
+

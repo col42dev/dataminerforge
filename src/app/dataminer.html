@@ -1,0 +1,55 @@
+
+
+<div class="container">
+    <p align="center"><b>DATAMINER</b></p>
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div>
+                <ul class="nav navbar-nav">
+                    <li [class.active]="getLinkStyle('')"><a [routerLink]="['/About']" class="link">About</a></li>
+                    <li [class.active]="getLinkStyle('')"><a [routerLink]="['/Dynamicworksheets']" class="list-group-item">DynamicWorksheets</a></li>
+                    <li [class.active]="getLinkStyle('')"><a [routerLink]="['/Eventscheduler']" class="list-group-item">EventScheduler</a></li>
+                    <li [class.active]="getLinkStyle('')"><a [routerLink]="['/Progressions']" class="list-group-item">Progressions</a></li>
+
+                </ul>
+            </div>
+        </div>
+    </nav>
+</div>
+
+<div *ngIf="versioning.hasLatest==0"> 
+    <b> You have an old dataminer version {{versioning.version}} loaded, the latest version is {{versioning.liveVersion}} </b>
+</div>
+
+<div class="col-md-9" *ngIf="versioning.hasLatest!=0"> 
+    <router-outlet></router-outlet>
+</div>
+
+
+<div class="footer">
+    <div class="container">
+    <p><span class="glyphicon glyphicons-spade"></span>version: {{versioning.version}}. <a href="http://www.magicfuelgames.com/">magicfuelgames</a>. <a href="https://github.com/col42dev/dataminer">https://github.com/col42dev/dataminer</a></p>
+    
+    </div>
+</div>
+ 
+    
+<!--
+
+https://spreadsheets.google.com/feeds/worksheets/1xP0aCx9S4wG_3XN9au5VezJ6xVTnZWNlOLX8l6B69n4/private/full
+
+od3otrm - Recipes
+omsznkc - Character Level Stats
+oevkvmv - Character Combat Modifiers
+omu0e9t
+ov2goyk - Progression
+os7bs54 - Progression By category (unlocks)
+oypka71 - mapstate
+otw4nb - simvalues
+oxtnpr4 - Simulation / simworkers
+o5onybx - MapJS
+oz4n58j - UnlockProgression
+o7sqgzj - Player Powers  
+
+   'https://spreadsheets.google.com/feeds/list/1xP0aCx9S4wG_3XN9au5VezJ6xVTnZWNlOLX8l6B69n4/oevkvmv/public/values?alt=json';
+-->

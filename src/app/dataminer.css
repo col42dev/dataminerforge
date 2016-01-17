@@ -1,0 +1,16 @@
+svg {
+    background: whitesmoke;
+    border: thin black solid;
+}
+
+path {
+  fill: none;
+  stroke: #000;
+  stroke-width: 3px;
+}
+
+circle {
+  fill: steelblue;
+  stroke: #fff;
+  stroke-width: 3px;
+}

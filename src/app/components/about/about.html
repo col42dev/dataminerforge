@@ -1,0 +1,5 @@
+<div class="container">
+    <p>Dataminer imports from google spreadsheets, converts to runtime ready JSON format and exports to AWS DynamoDB. Each exporter targets live and test tables in DynamoDB, exporting to the live channel will also export to the test channel and to the Perforce depot. The <a href='https://github.com/col42dev/dataminerbackfiller'>Dataminer Backfiller</a> app manages syncing the Perforce depot from the DynamoDB live table. The output for this sync is <a href='http://ec2-54-67-81-203.us-west-1.compute.amazonaws.com:5500/backfillerapi/getlog'>logged</a>.</p>
+    
+    <p>To generate a new dynamic data set for Dataminer, name the work sheet starting with an underscore. The <a href='http://localhost:8080/#/exporter/dynamicworksheets'>Dynamic Worksheets</a> page will locate these worksheets and provdes a generic exporter for them.</p>
+</div>

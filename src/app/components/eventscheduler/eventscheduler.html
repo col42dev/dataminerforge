@@ -1,0 +1,25 @@
+<h4><a href="">Event Scheduler</a></h4>
+
+<pre>
+version: {{result['json']['version']}}
+last edit date: {{result['json']['lastEditDate']}}
+</pre>
+
+<pre>
+<button (click)="handleImportFromGoogleDocs()"><span class="glyphicon glyphicon-import"></span> Import from google calendar:</button>
+</pre>
+
+
+<pre>
+<button (click)="handleExportToDynamoDB()"><span class="glyphicon glyphicon-export"></span> Live env export:</button>
+
+<button (click)="handleExportToDynamoDB('test')"><span class="glyphicon glyphicon-export"></span> Test env export:</button> 
+</pre>
+
+<iframe src="https://calendar.google.com/calendar/embed?src=e1f592e343osdhequi9a0og69s%40group.calendar.google.com&ctz=Europe/London" style="border: 0" width="800" height="600" frameborder="0" scrolling="no"></iframe>
+
+
+<p></p>
+
+<br/>
+<textarea readonly cols="50" rows="20"  style="float: right; width:100%">{{result.text}}</textarea>

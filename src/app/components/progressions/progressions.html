@@ -1,0 +1,34 @@
+<h4 ><a href="">Progressions Worksheets.</a></h4>
+
+
+<pre>
+version: {{result['json']['version']}}
+last edit date: {{result['json']['lastEditDate']}}
+</pre>
+
+<pre>
+<button (click)="handleImportProgressionsWorksheets()"><span></span>Populate Progressions WorkSheets List</button>
+
+<table class="table table-striped">
+    <tbody>
+        <tr *ngFor="#row of progressionWorksheetNames">
+            <td>{{row}}</td>
+            <td><button (click)="handleImportFromGoogleDocs(row)"><span class="glyphicon glyphicon-import"></span>Google sheet</button>
+</td>
+            <td><button (click)="handleExportToDynamoDB()"><span class="glyphicon glyphicon-export"></span>Live env</button>
+</td>
+           <td><button (click)="handleExportToDynamoDB('test')"><span class="glyphicon glyphicon-export"></span>Test env</button>
+</td>
+        </tr>
+    </tbody>
+</table>
+</pre>
+
+<pre>
+Set Export Comment: <input  style="float: right; width:75%" [(ngModel)]=result.comment/>
+</pre>
+
+<div id="svgtemplate"></div>
+
+<textarea  readonly cols="50" rows="20"  style="float: right; width:100%">{{result.text}}</textarea>
+
